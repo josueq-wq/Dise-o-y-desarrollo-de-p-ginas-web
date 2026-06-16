@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación Interactiva: Unidad 1 CMS</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --text-muted: #64748b;
+            --success-color: #10b981;
+            --success-bg: #ecfdf5;
+            --error-color: #ef4444;
+            --error-bg: #fef2f2;
+            --border-color: #e2e8f0;
+            --warning-color: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .welcome-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+            max-width: 500px;
+            margin: 40px auto;
+        }
+
+        .welcome-card h2 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .quiz-info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--card-bg);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+        }
+
+        .info-item {
+            font-weight: bold;
+            font-size: 1.05rem;
+        }
+
+        .timer-badge {
+            background-color: #fffbeb;
+            color: var(--warning-color);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid #fde68a;
+        }
+
+        .timer-badge.running {
+            background-color: #fef2f2;
+            color: var(--error-color);
+            border-color: #fca5a5;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { opacity: 1; }
+            to { opacity: 0.8; }
+        }
+
+        .quiz-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .question-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .question-number {
+            display: inline-block;
+            background-color: #e0e7ff;
+            color: var(--primary-color);
+            font-weight: bold;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        .options-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .option-item:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .option-item.correct {
+            background-color: var(--success-bg) !important;
+            border-color: var(--success-color) !important;
+            color: #065f46;
+        }
+
+        .option-item.incorrect {
+            background-color: var(--error-bg) !important;
+            border-color: var(--error-color) !important;
+            color: #991b1b;
+        }
+
+        .option-item.disabled {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .option-item.correct-answer-forced {
+            border-color: var(--success-color) !important;
+            background-color: var(--success-bg) !important;
+        }
+
+        .feedback {
+            margin-top: 16px;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .results-section {
+            text-align: center;
+            margin-top: 30px;
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .score-display {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        .btn-admin {
+            background-color: #475569;
+            color: white;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        .btn-admin:hover {
+            background-color: #334155;
+        }
+
+        .btn-danger {
+            background-color: var(--error-color);
+            color: white;
+            max-width: 200px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+
+        .report-section {
+            margin-top: 40px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+
+        .report-section h3 {
+            color: #334155;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+
+        .report-table th, .report-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .report-table th {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .report-table tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Evaluación Interactiva: Unidad 1 CMS</h1>
+        <p>Sistemas Manejadores de Contenidos de Imágenes, Audio y Video</p>
+    </header>
+
+    <div id="pin-screen" class="welcome-card">
+        <h2 style="color: var(--primary-color); margin-bottom: 10px;">Acceso Protegido</h2>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">El profesor debe ingresar el código de seguridad para habilitar el examen.</p>
+        <button class="btn" onclick="verifyInitialPin()">Habilitar Evaluación (PIN)</button>
+    </div>
+
+    <div id="lock-screen" class="welcome-card hidden">
+        <h2 style="color: var(--error-color);">SISTEMA BLOQUEADO</h2>
+        <p id="lock-message" style="margin: 15px 0; color: var(--text-muted);">
+            Se ha detectado un intento de alteración o esta evaluación ya ha sido completada en este navegador.
+        </p>
+        <button class="btn btn-admin" onclick="unlockQuizWithPin()">Desbloquear con PIN de Profesor</button>
+    </div>
+
+    <div id="welcome-screen" class="welcome-card hidden">
+        <h2>Registro del Estudiante</h2>
+        <div class="form-group">
+            <label for="student-name">Nombres y Apellidos completos:</label>
+            <input type="text" id="student-name" placeholder="Ej. Juan Pérez">
+        </div>
+        <button class="btn" onclick="startEvaluation()">Comenzar Evaluación</button>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <div class="quiz-info-bar">
+            <div class="info-item">Estudiante: <span id="display-name" style="color: var(--primary-color);"></span></div>
+            <div id="timer-display" class="info-item timer-badge">Tiempo: 30:00</div>
+        </div>
+
+        <div class="quiz-container" id="quiz-questions"></div>
+
+        <div class="results-section hidden" id="results-panel">
+            <div class="score-display" id="score-text"></div>
+            <p style="margin-bottom: 15px; color: var(--text-muted);">La prueba ha concluido y este navegador ha quedado bloqueado para futuros intentos.</p>
+            <button class="btn btn-admin" onclick="unlockQuizWithPin()">Habilitar nuevo estudiante (PIN)</button>
+        </div>
+    </div>
+
+    <div class="report-section" id="report-panel">
+        <div class="report-header">
+            <h3>Historial y Reporte de Calificaciones (Profesor)</h3>
+            <button class="btn btn-danger" onclick="clearReports()">Borrar Historial</button>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Fecha / Hora</th>
+                        <th>Estudiante</th>
+                        <th>Aciertos</th>
+                        <th>Calificación (Sobre 10)</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="report-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <form id="web3forms-form" action="https://api.web3forms.com/submit" method="POST" class="hidden">
+        <input type="hidden" name="access_key" value="47a5c56f-970b-4bdd-9136-82fc2ded72a0">
+        <input type="hidden" name="subject" id="email-subject" value="Nueva Calificación de Evaluación CMS">
+        <input type="hidden" name="from_name" value="Sistema de Evaluación Interactiva">
+        
+        <input type="hidden" name="Último_Estudiante" id="email-student-name">
+        <input type="hidden" name="Calificación_Último" id="email-student-score">
+        <input type="hidden" name="Estado_Entrega" id="email-student-status">
+        <input type="hidden" name="Fecha_Hora_Último" id="email-date">
+        
+        <input type="hidden" name="REPORTE_HISTÓRICO_NAVEGADOR" id="email-full-report">
+    </form>
+</div>
+
+<script>
+    const baseQuizData = [
+        {
+            question: "¿Qué significan las siglas CMS en el contexto del desarrollo y diseño web?",
+            options: [
+                { text: "Code Modular Software", isCorrect: false, rationale: "Aunque existen arquitecturas modulares en software, estas siglas no representan el término utilizado para los sistemas de gestión de contenidos." },
+                { text: "Content Management System", isCorrect: true, rationale: "CMS es el acrónimo exacto de Content Management System, que se traduce al español como Sistema Gestor o Manejador de Contenidos de manera online." },
+                { text: "Control Manager Site", isCorrect: false, rationale: "Este término es incorrecto; la función principal se centra en la gestión del contenido de manera integral, no en un panel de control aislado." },
+                { text: "Creative Media Solution", isCorrect: false, rationale: "A pesar de que los CMS gestionan recursos multimedia creativos, el nombre oficial se enfoca de forma genérica en la administración de contenidos." }
+            ]
+        },
+        {
+            question: "Una de las grandes ventajas de un CMS es que permite modificar de forma independiente dos aspectos fundamentales del sitio. ¿Cuáles son?",
+            options: [
+                { text: "El dominio y el hosting del servidor", isCorrect: false, rationale: "El dominio y el hosting son servicios de infraestructura de red externos a la lógica de separación interna del CMS." },
+                { text: "El código fuente PHP y la base de datos MySQL", isCorrect: false, rationale: "Modificar el núcleo PHP directamente suele alterar la forma en que se interactúa con los datos." },
+                { text: "El contenido y el diseño", isCorrect: true, rationale: "Los CMS permiten alterar el diseño estético mediante plantillas o temas sin afectar la base de datos de los contenidos, y viceversa." },
+                { text: "Los plugins de imágenes y las animaciones vectoriales", isCorrect: false, rationale: "Estos son componentes específicos multimedia y extensiones funcionales, no los ejes estructurales." }
+            ]
+        },
+        {
+            question: "De acuerdo con el documento, ¿cuál es una de las principales ventajas de utilizar GIMP en comparación con suites comerciales?",
+            options: [
+                { text: "Requiere la compra de una licencia anual de uso comercial", isCorrect: false, rationale: "GIMP es un software de código abierto y completamente gratuito, por lo que no requiere pagos de licencias." },
+                { text: "Es una herramienta de código abierto multiplataforma que permite realizar casi las mismas operaciones que un software de pago", isCorrect: true, rationale: "GIMP destaca por ser la mejor alternativa gratuita a Photoshop o Corel Draw, ofreciendo herramientas avanzadas sin costo alguno." },
+                { text: "Es un CMS que guarda la información exclusivamente en archivos estáticos HTML", isCorrect: false, rationale: "GIMP es un programa de manipulación y edición de imágenes, no un sistema de gestión de contenidos web." },
+                { text: "Solo funciona en sistemas operativos de código cerrado", isCorrect: false, rationale: "Al ser un software multiplataforma, se ejecuta en diversos entornos operativos, incluidos los de código abierto como GNU/Linux." }
+            ]
+        },
+        {
+            question: "Los pinceles principales con los que cuenta la aplicación de edición de imágenes GIMP incluyen:",
+            options: [
+                { text: "La pluma estilográfica, el lienzo tridimensional y la paleta de óleo", isCorrect: false, rationale: "Estas opciones corresponden a terminologías de diseño clásico o modelado, no a las herramientas nativas enumeradas para GIMP." },
+                { text: "La brocha, el lápiz, el tampón de clonar y el aerógrafo", isCorrect: true, rationale: "El documento detalla explícitamente que el programa incorpora la brocha, el lápiz, el tampón de clonar y el aerógrafo entre sus pinceles." },
+                { text: "El vector de trazado, la máscara alfa y el historial de degradados", isCorrect: false, rationale: "Aunque GIMP posee sistemas de capas, canales alfa e historial, estos no se clasifican técnicamente dentro de la categoría de pinceles." },
+                { text: "La varita mágica y el borrador de fondos indexados", isCorrect: false, rationale: "Estas herramientas pertenecen al grupo de selección y edición de transparencias, no forman parte de los pinceles principales." }
+            ]
+        },
+        {
+            question: "¿Qué elemento permite expandir las funcionalidades adicionales en WordPress, como agregar galerías secuenciales o animaciones de imágenes?",
+            options: [
+                { text: "Los servidores estáticos", isCorrect: false, rationale: "Los servidores alojan los archivos, pero no añaden dinámicamente características de diseño o interacción al CMS." },
+                { text: "Los canales alfa", isCorrect: false, rationale: "Los canales alfa definen la opacidad y transparencias en la edición de imágenes, no añaden funciones a un sitio web." },
+                { text: "Las consultas SQL externas", isCorrect: false, rationale: "Las consultas SQL se encargan de interrogar a la base de datos, no son extensiones de formato visual." },
+                { text: "Los plugins", isCorrect: true, rationale: "El documento señala que el uso de plugins o extensiones facilita la incorporación de tareas adicionales de forma intuitiva sin programar." }
+            ]
+        },
+        {
+            question: "¿Cuál es el enfoque principal de la plataforma modular y escalable Magento?",
+            options: [
+                { text: "El retoque fotográfico profesional multiplataforma", isCorrect: false, rationale: "Esa descripción corresponde a herramientas de diseño gráfico y edición como GIMP." },
+                { text: "El comercio en línea (eCommerce) de código liberado", isCorrect: true, rationale: "Magento es definido específicamente como una plataforma modular de código abierto diseñada para llevar a cabo proyectos de venta por Internet." },
+                { text: "La maquetación exclusiva de blogs cronológicos personales", isCorrect: false, rationale: "Aunque WordPress nació enfocado en blogs, Magento fue concebido desde sus inicios con un perfil transaccional." },
+                { text: "La conversión masiva de formatos de audio digital", isCorrect: false, rationale: "Ningún dato técnico asocia a Magento con la codificación o procesamiento directo de archivos multimedia de sonido." }
+            ]
+        },
+        {
+            question: "¿Cuántos componentes pone Joomla! a disposición del usuario para ir ampliando las funcionalidades de su página web?",
+            options: [
+                { text: "Exactamente 100 complementos de código cerrado", isCorrect: false, rationale: "Cien es la cifra aproximada que se menciona para la cantidad de plugins iniciales disponibles en el ecosistema de GIMP." },
+                { text: "Más de 12.000 componentes", isCorrect: true, rationale: "El documento indica textualmente que Joomla! ofrece más de 12.000 componentes para añadir foros, boletines, e-commerce, entre otros." },
+                { text: "Alrededor de 40 millones de módulos PHP", isCorrect: false, rationale: "El número 40 millones representa la estimación total de páginas creadas a nivel mundial con la plataforma Joomla!." },
+                { text: "Menos de 500 temas registrados", isCorrect: false, rationale: "Esta cifra no se corresponde con las métricas de extensibilidad provistas por el texto pedagógico de la unidad." }
+            ]
+        },
+        {
+            question: "Con respecto al almacenamiento de contenidos en Drupal, ¿cuál es la विशेषता técnica que destacan los expertos?",
+            options: [
+                { text: "Los contenidos se guardan como archivos estáticos directamente en las carpetas raíz", isCorrect: false, rationale: "El texto aclara de forma explícitamente que Drupal rompe con el esquema clásico de guardar contenido de forma estática." },
+                { text: "Los contenidos se almacenan en una base de datos y no en el clásico sistema de ficheros del servidor", isCorrect: true, rationale: "Drupal estructura toda la información dinámicamente en una base de datos, asegurando flexibilidad óptima al programador." },
+                { text: "Se sincronizan exclusivamente mediante el protocolo FTP en tiempo real", isCorrect: false, rationale: "FTP es una vía de transferencia de archivos, no un método interno de estructuración de información." },
+                { text: "No requiere bases de datos por estar desarrollado en texto plano", isCorrect: false, rationale: "Al ser un CMS completo escrito en PHP, la vinculación a motores relacionales es obligatoria para indexar publicaciones." }
+            ]
+        },
+        {
+            question: "¿En qué año nació el CMS de software libre TYPO3 y qué estructura facilita al usuario para la gestión de autoría?",
+            options: [
+                { text: "Nació en el año 2012 y cuenta solo con una estructura lineal simple", isCorrect: false, rationale: "Esta fecha es incorrecta, ya que el sistema tiene una trayectoria mucho más larga que inició con el cambio de milenio." },
+                { text: "Surgió en el año 1995 de manera exclusiva para tiendas e-commerce", isCorrect: false, rationale: "Los datos del documento sitúan formalmente a TYPO3 en el año 2000." },
+                { text: "Nació en el año 2000 y facilita una estructura multinivel", isCorrect: true, rationale: "Según el documento, TYPO3 nació en el año 2000 y proporciona una estructura multinivel, motor de búsquedas y plantillas para maquetar." },
+                { text: "Fue desarrollado en el año 2020 como complemento directo de Photoshop", isCorrect: false, rationale: "TYPO3 es un portal independiente de gestión de contenidos web bajo licencia GPL." }
+            ]
+        },
+        {
+            question: "¿Qué funciones avanzadas ofrece el CMS intuitivo Contao para facilitar la edición de múltiples registros a la vez?",
+            options: [
+                { text: "Obliga al usuario a programar scripts en bloques de código HTML puro", isCorrect: false, rationale: "Contao destaca precisamente por permitir administrar el sitio de forma intuitiva sin requerir escrituras de código complejas." },
+                { text: "Permite ordenar elementos mediante procesos de arrastrar y soltar (drag and drop) o a través de copiar y pegar", isCorrect: true, rationale: "Contao facilita la labor diaria a través de funciones visuales muy accesibles como arrastrar y soltar, o copiar y pegar registros en bloque." },
+                { text: "Únicamente opera mediante comandos de consola de servidor en Linux", isCorrect: false, rationale: "La interfaz de Contao es completamente gráfica y amigable para entornos web comerciales, no orientada a comandos terminales." },
+                { text: "Inhabilita la edición de metadatos para motores de búsqueda", isCorrect: false, rationale: "Contao permite ajustar el título y la descripción de cada página, optimizando activamente la indexación en motores de búsqueda." }
+            ]
+        }
+    ];
+
+    let activeQuizData = []; 
+    let studentName = "";
+    let score = 0;
+    let answeredQuestions = 0;
+    let timerInterval = null;
+    let timeLeft = 30 * 60; 
+    const MASTER_PIN = "3636";
+
+    window.onload = function() {
+        updateReportTable();
+
+        if (localStorage.getItem('browser_locked') === 'true') {
+            showLockScreen("Este navegador ya cuenta con un registro de evaluación guardado. No se permiten múltiples intentos.");
+            return;
+        }
+
+        if (sessionStorage.getItem('exam_active') === 'true') {
+            penalizeFraud();
+        }
+    };
+
+    window.onbeforeunload = function() {
+        if (sessionStorage.getItem('exam_active') === 'true') {
+            return "Si sales o refrescas la página, tu evaluación se anulará con nota 0 de forma automática.";
+        }
+    };
+
+    function showLockScreen(message) {
+        document.getElementById('pin-screen').classList.add('hidden');
+        document.getElementById('welcome-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('lock-message').innerText = message;
+        document.getElementById('lock-screen').classList.remove('hidden');
+    }
+
+    function penalizeFraud() {
+        sessionStorage.removeItem('exam_active');
+        localStorage.setItem('browser_locked', 'true');
+
+        const savedName = sessionStorage.getItem('current_student') || "Estudiante Anónimo";
+        
+        const reportRecords = JSON.parse(localStorage.getItem('quiz_reports')) || [];
+        const currentData = {
+            date: new Date().toLocaleString(),
+            name: savedName,
+            score: 0,
+            total: baseQuizData.length,
+            status: "FRAUDE (Refrescó página)"
+        };
+        reportRecords.push(currentData);
+        localStorage.setItem('quiz_reports', JSON.stringify(reportRecords));
+
+        showLockScreen("Se detectó una recarga de página durante la evaluación activa. El examen fue anulado con calificación 0.");
+        updateReportTable();
+        
+        // Enviar alerta de fraude inmediatamente por correo
+        sendEmailReport(savedName, "0 / 10", "FRAUDE (Refrescó página)", currentData.date, reportRecords);
+    }
+
+    function verifyInitialPin() {
+        const pinInput = prompt("Ingrese el PIN de Seguridad del Profesor para habilitar el registro del alumno:");
+        if (pinInput === MASTER_PIN) {
+            document.getElementById('pin-screen').classList.add('hidden');
+            document.getElementById('welcome-screen').classList.remove('hidden');
+        } else if (pinInput !== null) {
+            alert("PIN incorrecto. El acceso a la evaluación sigue restringido.");
+        }
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function startEvaluation() {
+        const nameInput = document.getElementById('student-name');
+        studentName = nameInput.value.trim();
+
+        if (studentName === "") {
+            alert("Por favor, ingrese sus nombres y apellidos para comenzar.");
+            return;
+        }
+
+        sessionStorage.setItem('exam_active', 'true');
+        sessionStorage.setItem('current_student', studentName);
+
+        document.getElementById('display-name').innerText = studentName;
+        document.getElementById('welcome-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        
+        prepareAndLoadQuiz();
+        startTimer();
+    }
+
+    function prepareAndLoadQuiz() {
+        activeQuizData = JSON.parse(JSON.stringify(baseQuizData));
+        shuffleArray(activeQuizData);
+        activeQuizData.forEach(q => shuffleArray(q.options));
+
+        const container = document.getElementById('quiz-questions');
+        container.innerHTML = '';
+        score = 0;
+        answeredQuestions = 0;
+        timeLeft = 30 * 60;
+        document.getElementById('timer-display').innerText = "Tiempo: 30:00";
+        document.getElementById('timer-display').className = "info-item timer-badge";
+        document.getElementById('results-panel').classList.add('hidden');
+
+        activeQuizData.forEach((q, qIndex) => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.id = `card-${qIndex}`;
+
+            card.innerHTML = `
+                <span class="question-number">Pregunta ${qIndex + 1} de ${activeQuizData.length}</span>
+                <div class="question-text">${q.question}</div>
+                <ul class="options-list">
+                    ${q.options.map((opt, oIndex) => `
+                        <li class="option-item" onclick="selectOption(${qIndex}, ${oIndex}, this)">
+                            ${opt.text}
+                        </li>
+                    `).join('')}
+                </ul>
+                <div class="feedback" id="feedback-${qIndex}"></div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function startTimer() {
+        document.getElementById('timer-display').classList.add('running');
+        
+        if (timerInterval) clearInterval(timerInterval);
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            
+            let minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            
+            document.getElementById('timer-display').innerText = `Tiempo: ${minutes}:${seconds}`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                finishQuiz(true); 
+            }
+        }, 1000);
+    }
+
+    function selectOption(qIndex, oIndex, selectedElement) {
+        const card = document.getElementById(`card-${qIndex}`);
+        const options = card.getElementsByClassName('option-item');
+        const feedbackBlock = document.getElementById('feedback-' + qIndex);
+        const chosenOption = activeQuizData[qIndex].options[oIndex];
+
+        for (let i = 0; i < options.length; i++) {
+            options[i].classList.add('disabled');
+            if (activeQuizData[qIndex].options[i].isCorrect) {
+                options[i].classList.add('correct-answer-forced');
+            }
+        }
+
+        if (chosenOption.isCorrect) {
+            selectedElement.classList.remove('correct-answer-forced');
+            selectedElement.classList.add('correct');
+            score++;
+            feedbackBlock.style.backgroundColor = 'var(--success-bg)';
+            feedbackBlock.style.color = '#065f46';
+            feedbackBlock.style.borderLeft = '4px solid var(--success-color)';
+            feedbackBlock.innerHTML = `<div class="feedback-title">✓ ¡Correcto!</div><div>${chosenOption.rationale}</div>`;
+        } else {
+            selectedElement.classList.add('incorrect');
+            feedbackBlock.style.backgroundColor = 'var(--error-bg)';
+            feedbackBlock.style.color = '#991b1b';
+            feedbackBlock.style.borderLeft = '4px solid var(--error-color)';
+            feedbackBlock.innerHTML = `<div class="feedback-title">✗ Incorrecto</div><div>${chosenOption.rationale}</div>`;
+        }
+
+        feedbackBlock.classList.add('show');
+        answeredQuestions++;
+
+        if (answeredQuestions === activeQuizData.length) {
+            clearInterval(timerInterval);
+            finishQuiz(false);
+        }
+    }
+
+    function finishQuiz(timeoutExpired = false) {
+        sessionStorage.removeItem('exam_active');
+        localStorage.setItem('browser_locked', 'true');
+
+        if (timeoutExpired) {
+            const allOptions = document.getElementsByClassName('option-item');
+            for(let i=0; i<allOptions.length; i++) {
+                allOptions[i].classList.add('disabled');
+            }
+            alert("El tiempo de 30 minutos ha expirado.");
+        }
+
+        document.getElementById('results-panel').classList.remove('hidden');
+        document.getElementById('score-text').innerText = `Evaluación Finalizada. Estudiante: ${studentName} - Calificación: ${score} / ${activeQuizData.length}`;
+
+        const currentStatus = timeoutExpired ? "Tiempo Agotado" : "Terminado";
+        const currentDateStr = new Date().toLocaleString();
+
+        const reportRecords = JSON.parse(localStorage.getItem('quiz_reports')) || [];
+        const currentData = {
+            date: currentDateStr,
+            name: studentName,
+            score: score,
+            total: activeQuizData.length,
+            status: currentStatus
+        };
+        reportRecords.push(currentData);
+        localStorage.setItem('quiz_reports', JSON.stringify(reportRecords));
+
+        updateReportTable();
+        document.getElementById('results-panel').scrollIntoView({ behavior: 'smooth' });
+
+        // --- LLAMADA OPTIMIZADA AL ENVÍO DE EMAIL ---
+        sendEmailReport(studentName, `${score} / ${activeQuizData.length}`, currentStatus, currentDateStr, reportRecords);
+    }
+
+    // NUEVA FUNCIÓN COMPARTIDA PARA GENERAR EL REPORTE HISTÓRICO COMPLETO Y ENVIARLO
+    function sendEmailReport(lastStudent, lastScore, status, dateStr, allRecords) {
+        document.getElementById('email-subject').value = `Calificación CMS: ${lastStudent} (${lastScore})`;
+        document.getElementById('email-student-name').value = lastStudent;
+        document.getElementById('email-student-score').value = lastScore;
+        document.getElementById('email-student-status').value = status;
+        document.getElementById('email-date').value = dateStr;
+
+        // Construir una cadena de texto estructurada con el historial completo de este navegador
+        let formattedReport = "HISTORIAL COMPLETO DE ESTE NAVEGADOR:\n";
+        formattedReport += "==================================================\n";
+        
+        // Lo ordenamos al revés (del más nuevo al más antiguo) para comodidad del docente
+        [...allRecords].reverse().forEach((record, index) => {
+            formattedReport += `${index + 1}. [${record.date}] - Alumno: ${record.name} | Aciertos: ${record.score}/${record.total} | Estado: ${record.status}\n`;
+        });
+        formattedReport += "==================================================";
+
+        // Inyectar el reporte estructurado en el formulario
+        document.getElementById('email-full-report').value = formattedReport;
+
+        const form = document.getElementById('web3forms-form');
+        const formData = new FormData(form);
+
+        fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log("Reporte completo enviado con éxito por email.");
+            } else {
+                console.error("Error en Web3Forms:", data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Error de red al intentar enviar por email:", error);
+        });
+    }
+
+    function updateReportTable() {
+        const reportRecords = JSON.parse(localStorage.getItem('quiz_reports')) || [];
+        const tbody = document.getElementById('report-body');
+        tbody.innerHTML = '';
+
+        if (reportRecords.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No hay estudiantes registrados todavía.</td></tr>`;
+            return;
+        }
+
+        [...reportRecords].reverse().forEach(record => {
+            const tr = document.createElement('tr');
+            let colorEstado = 'var(--success-color)';
+            if(record.status.includes('FRAUDE')) colorEstado = 'var(--error-color)';
+            else if(record.status.includes('Agotado')) colorEstado = 'var(--warning-color)';
+
+            tr.innerHTML = `
+                <td>${record.date}</td>
+                <td><strong>${record.name}</strong></td>
+                <td>${record.score} / ${record.total}</td>
+                <td style="font-weight: bold; color: var(--primary-color);">${record.score.toFixed(2)}</td>
+                <td><span style="color: ${colorEstado}; font-weight: bold;">${record.status}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function unlockQuizWithPin() {
+        const insertedPin = prompt("Ingrese el PIN de Seguridad del Profesor para habilitar la evaluación a otro alumno:");
+        
+        if (insertedPin === MASTER_PIN) {
+            alert("PIN correcto. El sistema se ha desbloqueado. Cargando pantalla de autorización.");
+            
+            localStorage.removeItem('browser_locked');
+            sessionStorage.removeItem('exam_active');
+            
+            document.getElementById('student-name').value = "";
+            document.getElementById('lock-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('pin-screen').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else if (insertedPin !== null) {
+            alert("PIN incorrecto. Las restricciones del sistema siguen activas.");
+        }
+    }
+
+    function clearReports() {
+        const insertedPin = prompt("Ingrese el PIN de Seguridad del Profesor para BORRAR TODO el historial:");
+        
+        if (insertedPin === MASTER_PIN) {
+            if (confirm("¿Está completamente seguro de que desea eliminar permanentemente todos los registros de calificaciones? Esta acción no se puede deshacer.")) {
+                localStorage.removeItem('quiz_reports');
+                updateReportTable();
+                alert("Historial eliminado correctamente.");
+            }
+        } else if (insertedPin !== null) {
+            alert("PIN incorrecto. No se realizaron cambios.");
+        }
+    }
+</script>
+
+</body>
+</html>
