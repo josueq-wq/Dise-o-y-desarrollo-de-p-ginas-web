@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evaluación Interactiva: Unidad 1 CMS</title>
+    <title>Evaluación Interactiva Segura: Unidad 1 CMS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary-color: #4f46e5;
@@ -344,16 +345,10 @@
         <p>Sistemas Manejadores de Contenidos de Imágenes, Audio y Video</p>
     </header>
 
-    <div id="pin-screen" class="welcome-card hidden">
-        <h2 style="color: var(--primary-color); margin-bottom: 10px;">Acceso Protegido</h2>
-        <p style="color: var(--text-muted); margin-bottom: 20px;">El profesor debe ingresar el código de seguridad para habilitar el examen.</p>
-        <button class="btn" onclick="verifyInitialPin()">Habilitar Evaluación (PIN)</button>
-    </div>
-
     <div id="lock-screen" class="welcome-card hidden">
         <h2 style="color: var(--error-color);">SISTEMA BLOQUEADO</h2>
         <p id="lock-message" style="margin: 15px 0; color: var(--text-muted);">
-            Se ha detectado un intento de alteración o esta evaluación ya ha sido completada en este navegador.
+            Se ha detectado un intento de alteración o esta evaluación ya ha sido completada.
         </p>
         <button class="btn btn-admin" onclick="unlockQuizWithPin()">Desbloquear con PIN de Profesor</button>
     </div>
@@ -377,15 +372,17 @@
 
         <div class="results-section hidden" id="results-panel">
             <div class="score-display" id="score-text"></div>
-            <p style="margin-bottom: 15px; color: var(--text-muted);">La prueba ha concluido y este navegador ha quedado bloqueado para futuros intentos.</p>
-            <button class="btn btn-admin" onclick="unlockQuizWithPin()">Habilitar nuevo estudiante (PIN)</button>
+            <p style="margin-bottom: 15px; color: var(--text-muted);">La prueba ha concluido y tu registro se ha guardado en el servidor.</p>
         </div>
     </div>
 
     <div class="report-section" id="report-panel">
         <div class="report-header">
-            <h3>Historial y Reporte de Calificaciones (Profesor)</h3>
-            <button class="btn btn-danger" onclick="clearReports()">Borrar Historial</button>
+            <h3>Historial de Calificaciones en la Nube (Profesor)</h3>
+            <div>
+                <button class="btn" style="width: auto; padding: 8px 16px; margin-right: 10px;" onclick="loadCloudReports()">Ver/Actualizar Reportes</button>
+                <button class="btn btn-danger" onclick="clearReports()">Borrar Historial</button>
+            </div>
         </div>
         <div style="overflow-x:auto;">
             <table class="report-table">
@@ -398,26 +395,24 @@
                         <th>Estado</th>
                     </tr>
                 </thead>
-                <tbody id="report-body"></tbody>
+                <tbody id="report-body">
+                    <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Haga clic en 'Ver/Actualizar Reportes' e ingrese el PIN para descargar los datos reales.</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
-
-    <form id="web3forms-form" action="https://api.web3forms.com/submit" method="POST" class="hidden">
-        <input type="hidden" name="access_key" value="47a5c56f-970b-4bdd-9136-82fc2ded72a0">
-        <input type="hidden" name="subject" id="email-subject" value="Nueva Calificación de Evaluación CMS">
-        <input type="hidden" name="from_name" value="Sistema de Evaluación Interactiva">
-        
-        <input type="hidden" name="Último_Estudiante" id="email-student-name">
-        <input type="hidden" name="Calificación_Último" id="email-student-score">
-        <input type="hidden" name="Estado_Entrega" id="email-student-status">
-        <input type="hidden" name="Fecha_Hora_Último" id="email-date">
-        
-        <input type="hidden" name="REPORTE_HISTÓRICO_NAVEGADOR" id="email-full-report">
-    </form>
 </div>
 
 <script>
+    // ==========================================
+    // CONFIGURACIÓN DE SUPABASE (BASE DE DATOS)
+    // ==========================================
+    // REGÍSTRATE EN SUPABASE.COM (GRATIS), CREA UN PROYECTO Y PEGA TUS DATOS AQUÍ:
+    const SUPABASE_URL = "https://wbxgwudzajjswgrbemqt.supabase.co"; 
+    const SUPABASE_ANON_KEY = "sb_publishable_nZo6gqMhtuzMXG0XMRIgUg_60pcKrq2";
+    
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const baseQuizData = [
         {
             question: "¿Qué significan las siglas CMS en el contexto del desarrollo y diseño web?",
@@ -520,100 +515,42 @@
     const MASTER_PIN = "3636";
 
     window.onload = function() {
-        updateReportTable();
-
         if (localStorage.getItem('browser_locked') === 'true') {
-            showLockScreen("Este navegador ya cuenta con un registro de evaluación guardado. No se permiten múltiples intentos.");
-            return;
-        }
-
-        if (sessionStorage.getItem('exam_active') === 'true') {
-            penalizeFraud();
+            showLockScreen("Este navegador está bloqueado localmente por haber finalizado o alterado la prueba.");
         }
     };
 
-    window.onbeforeunload = function() {
-        if (sessionStorage.getItem('exam_active') === 'true') {
-            return "Si sales o refrescas la página, tu evaluación se anulará con nota 0 de forma automática.";
-        }
-    };
-
+    // Control de fraude por cambio de pestaña/ventana
     document.addEventListener("visibilitychange", function() {
         if (document.hidden && sessionStorage.getItem('exam_active') === 'true') {
-            penalizeTabChange();
+            penalizeFraud("FRAUDE (Cambió de pantalla)");
         }
     });
 
     window.addEventListener("blur", function() {
         if (sessionStorage.getItem('exam_active') === 'true') {
-            penalizeTabChange();
+            penalizeFraud("FRAUDE (Salió de la ventana)");
         }
     });
 
-    function penalizeTabChange() {
+    async function penalizeFraud(motive) {
         if (timerInterval) clearInterval(timerInterval);
         sessionStorage.removeItem('exam_active');
         localStorage.setItem('browser_locked', 'true');
 
-        const savedName = sessionStorage.getItem('current_student') || "Estudiante Anónimo";
-        const currentDateStr = new Date().toLocaleString();
+        const savedName = sessionStorage.getItem('current_student') || "Estudiante Desconocido";
         
-        const reportRecords = JSON.parse(localStorage.getItem('quiz_reports')) || [];
-        const currentData = {
-            date: currentDateStr,
-            name: savedName,
-            score: 0,
-            total: baseQuizData.length,
-            status: "FRAUDE (Cambió de pantalla)"
-        };
-        reportRecords.push(currentData);
-        localStorage.setItem('quiz_reports', JSON.stringify(reportRecords));
+        // Guardar penalización directo en la base de datos en la nube
+        await saveCloudResult(savedName, 0, motive);
 
-        showLockScreen("Se detectó que saliste de la pantalla de la evaluación (cambio de pestaña o ventana). El examen fue bloqueado y anulado con calificación 0.");
-        updateReportTable();
-        
-        sendEmailReport(savedName, "0 / 10", "FRAUDE (Cambió de pantalla)", currentDateStr, reportRecords);
+        showLockScreen(`Se detectó una acción inválida (${motive}). El examen fue bloqueado y anulado con nota 0.`);
     }
 
     function showLockScreen(message) {
-        document.getElementById('pin-screen').classList.add('hidden');
         document.getElementById('welcome-screen').classList.add('hidden');
         document.getElementById('quiz-screen').classList.add('hidden');
         document.getElementById('lock-message').innerText = message;
         document.getElementById('lock-screen').classList.remove('hidden');
-    }
-
-    function penalizeFraud() {
-        sessionStorage.removeItem('exam_active');
-        localStorage.setItem('browser_locked', 'true');
-
-        const savedName = sessionStorage.getItem('current_student') || "Estudiante Anónimo";
-        
-        const reportRecords = JSON.parse(localStorage.getItem('quiz_reports')) || [];
-        const currentData = {
-            date: new Date().toLocaleString(),
-            name: savedName,
-            score: 0,
-            total: baseQuizData.length,
-            status: "FRAUDE (Refrescó página)"
-        };
-        reportRecords.push(currentData);
-        localStorage.setItem('quiz_reports', JSON.stringify(reportRecords));
-
-        showLockScreen("Se detectó una recarga de página durante la evaluación activa. El examen fue anulado con calificación 0.");
-        updateReportTable();
-        
-        sendEmailReport(savedName, "0 / 10", "FRAUDE (Refrescó página)", currentData.date, reportRecords);
-    }
-
-    function verifyInitialPin() {
-        const pinInput = prompt("Ingrese el PIN de Seguridad del Profesor para habilitar el registro del alumno:");
-        if (pinInput === MASTER_PIN) {
-            document.getElementById('pin-screen').classList.add('hidden');
-            document.getElementById('welcome-screen').classList.remove('hidden');
-        } else if (pinInput !== null) {
-            alert("PIN incorrecto. El acceso a la evaluación sigue restringido.");
-        }
     }
 
     function shuffleArray(array) {
@@ -624,24 +561,49 @@
         return array;
     }
 
-    function startEvaluation() {
+    // ==========================================
+    // VALIDACIÓN DE SEGURIDAD CONTRA LA NUBE
+    // ==========================================
+    async function startEvaluation() {
         const nameInput = document.getElementById('student-name');
-        studentName = nameInput.value.trim();
+        studentName = nameInput.value.trim().toUpperCase(); // Normalizamos a mayúsculas
 
         if (studentName === "") {
             alert("Por favor, ingrese sus nombres y apellidos para comenzar.");
             return;
         }
 
-        sessionStorage.setItem('exam_active', 'true');
-        sessionStorage.setItem('current_student', studentName);
+        try {
+            // CONSULTA EN LA NUBE: ¿Este estudiante ya existe en el historial?
+            const { data, error } = await supabase
+                .from('calificaciones_cms')
+                .select('student_name')
+                .eq('student_name', studentName);
 
-        document.getElementById('display-name').innerText = studentName;
-        document.getElementById('welcome-screen').classList.add('hidden');
-        document.getElementById('quiz-screen').classList.remove('hidden');
-        
-        prepareAndLoadQuiz();
-        startTimer();
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                // Si el nombre ya está registrado en la nube, se le bloquea el acceso en cualquier dispositivo
+                alert("ERROR DE SEGURIDAD: Este estudiante ya cuenta con un intento registrado en el servidor. No se permiten duplicados.");
+                showLockScreen("Acceso Denegado. Ya existe una entrega previa con este nombre en la base de datos.");
+                return;
+            }
+
+            // Si está limpio, inicia el examen de manera normal
+            sessionStorage.setItem('exam_active', 'true');
+            sessionStorage.setItem('current_student', studentName);
+
+            document.getElementById('display-name').innerText = studentName;
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            
+            prepareAndLoadQuiz();
+            startTimer();
+
+        } catch (err) {
+            console.error(err);
+            alert("Error de conexión con el servidor de seguridad. Asegúrate de configurar Supabase correctamente.");
+        }
     }
 
     function prepareAndLoadQuiz() {
@@ -654,9 +616,6 @@
         score = 0;
         answeredQuestions = 0;
         timeLeft = 30 * 60;
-        document.getElementById('timer-display').innerText = "Tiempo: 30:00";
-        document.getElementById('timer-display').className = "info-item timer-badge";
-        document.getElementById('results-panel').classList.add('hidden');
 
         activeQuizData.forEach((q, qIndex) => {
             const card = document.createElement('div');
@@ -681,12 +640,10 @@
 
     function startTimer() {
         document.getElementById('timer-display').classList.add('running');
-        
         if (timerInterval) clearInterval(timerInterval);
 
         timerInterval = setInterval(() => {
             timeLeft--;
-            
             let minutes = Math.floor(timeLeft / 60);
             let seconds = timeLeft % 60;
             
@@ -740,7 +697,7 @@
         }
     }
 
-    function finishQuiz(timeoutExpired = false) {
+    async function finishQuiz(timeoutExpired = false) {
         sessionStorage.removeItem('exam_active');
         localStorage.setItem('browser_locked', 'true');
 
@@ -755,121 +712,121 @@
         document.getElementById('results-panel').classList.remove('hidden');
         document.getElementById('score-text').innerText = `Evaluación Finalizada. Estudiante: ${studentName} - Calificación: ${score} / ${activeQuizData.length}`;
 
-        const currentStatus = timeoutExpired ? "Tiempo Agotado" : "Terminado";
-        const currentDateStr = new Date().toLocaleString();
-
-        const reportRecords = JSON.parse(localStorage.getItem('quiz_reports')) || [];
-        const currentData = {
-            date: currentDateStr,
-            name: studentName,
-            score: score,
-            total: activeQuizData.length,
-            status: currentStatus
-        };
-        reportRecords.push(currentData);
-        localStorage.setItem('quiz_reports', JSON.stringify(reportRecords));
-
-        updateReportTable();
-        document.getElementById('results-panel').scrollIntoView({ behavior: 'smooth' });
-
-        sendEmailReport(studentName, `${score} / ${activeQuizData.length}`, currentStatus, currentDateStr, reportRecords);
-    }
-
-    function sendEmailReport(lastStudent, lastScore, status, dateStr, allRecords) {
-        document.getElementById('email-subject').value = `Calificación CMS: ${lastStudent} (${lastScore})`;
-        document.getElementById('email-student-name').value = lastStudent;
-        document.getElementById('email-student-score').value = lastScore;
-        document.getElementById('email-student-status').value = status;
-        document.getElementById('email-date').value = dateStr;
-
-        let formattedReport = "HISTORIAL COMPLETO DE ESTE NAVEGADOR:\n";
-        formattedReport += "==================================================\n";
+        const status = timeoutExpired ? "Tiempo Agotado" : "Terminado";
         
-        [...allRecords].reverse().forEach((record, index) => {
-            formattedReport += `${index + 1}. [${record.date}] - Alumno: ${record.name} | Aciertos: ${record.score}/${record.total} | Estado: ${record.status}\n`;
-        });
-        formattedReport += "==================================================";
-
-        document.getElementById('email-full-report').value = formattedReport;
-
-        const form = document.getElementById('web3forms-form');
-        const formData = new FormData(form);
-
-        fetch('https://api.web3forms.com/submit', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log("Reporte completo enviado con éxito por email.");
-            } else {
-                console.error("Error en Web3Forms:", data.message);
-            }
-        })
-        .catch(error => {
-            console.error("Error de red al intentar enviar por email:", error);
-        });
+        // Guardar la calificación final de manera segura en la nube
+        await saveCloudResult(studentName, score, status);
+        document.getElementById('results-panel').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function updateReportTable() {
-        const reportRecords = JSON.parse(localStorage.getItem('quiz_reports')) || [];
-        const tbody = document.getElementById('report-body');
-        tbody.innerHTML = '';
+    // FUNCIÓN CLAVE: Guarda datos de forma asíncrona directamente en Supabase
+    async function saveCloudResult(name, scorePoints, state) {
+        try {
+            const { error } = await supabase
+                .from('calificaciones_cms')
+                .insert([
+                    { 
+                        student_name: name, 
+                        score: scorePoints, 
+                        total: baseQuizData.length, 
+                        status: state,
+                        created_at: new Date().toISOString()
+                    }
+                ]);
+            if (error) throw error;
+            console.log("Datos respaldados en la nube exitosamente.");
+        } catch (err) {
+            console.error("Error guardando en la nube:", err);
+        }
+    }
 
-        if (reportRecords.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No hay estudiantes registrados todavía.</td></tr>`;
+    // Descargar reportes reales de la nube protegiéndolos mediante el PIN del docente
+    async function loadCloudReports() {
+        const pinInput = prompt("Ingrese el PIN de Seguridad del Profesor para descargar las notas de la nube:");
+        if (pinInput !== MASTER_PIN) {
+            alert("PIN incorrecto. Acceso denegado.");
             return;
         }
 
-        [...reportRecords].reverse().forEach(record => {
-            const tr = document.createElement('tr');
-            let colorEstado = 'var(--success-color)';
-            if(record.status.includes('FRAUDE')) colorEstado = 'var(--error-color)';
-            else if(record.status.includes('Agotado')) colorEstado = 'var(--warning-color)';
+        const tbody = document.getElementById('report-body');
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Descargando datos desde el servidor...</td></tr>`;
 
-            tr.innerHTML = `
-                <td>${record.date}</td>
-                <td><strong>${record.name}</strong></td>
-                <td>${record.score} / ${record.total}</td>
-                <td style="font-weight: bold; color: var(--primary-color);">${record.score.toFixed(2)}</td>
-                <td><span style="color: ${colorEstado}; font-weight: bold;">${record.status}</span></td>
-            `;
-            tbody.appendChild(tr);
-        });
+        try {
+            const { data, error } = await supabase
+                .from('calificaciones_cms')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            tbody.innerHTML = '';
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No hay estudiantes registrados en la base de datos centralizada.</td></tr>`;
+                return;
+            }
+
+            data.forEach(record => {
+                const tr = document.createElement('tr');
+                let colorEstado = 'var(--success-color)';
+                if(record.status.includes('FRAUDE')) colorEstado = 'var(--error-color)';
+                else if(record.status.includes('Agotado')) colorEstado = 'var(--warning-color)';
+
+                const localDate = new Date(record.created_at).toLocaleString();
+
+                tr.innerHTML = `
+                    <td>${localDate}</td>
+                    <td><strong>${record.student_name}</strong></td>
+                    <td>${record.score} / ${record.total}</td>
+                    <td style="font-weight: bold; color: var(--primary-color);">${record.score.toFixed(2)}</td>
+                    <td><span style="color: ${colorEstado}; font-weight: bold;">${record.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+        } catch (err) {
+            console.error(err);
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--error-color);">Error al conectar con la base de datos.</td></tr>`;
+        }
     }
 
     function unlockQuizWithPin() {
-        const insertedPin = prompt("Ingrese el PIN de Seguridad del Profesor para habilitar la evaluación a otro alumno:");
-        
+        const insertedPin = prompt("Ingrese el PIN de Seguridad del Profesor para restaurar el sistema:");
         if (insertedPin === MASTER_PIN) {
-            alert("PIN correcto. El sistema se ha desbloqueado. Cargando pantalla de registro de estudiante.");
-            
             localStorage.removeItem('browser_locked');
             sessionStorage.removeItem('exam_active');
+            sessionStorage.removeItem('current_student');
             
             document.getElementById('student-name').value = "";
             document.getElementById('lock-screen').classList.add('hidden');
             document.getElementById('quiz-screen').classList.add('hidden');
-            document.getElementById('pin-screen').classList.add('hidden');
-            document.getElementById('welcome-screen').classList.remove('hidden'); // Redirige directamente al registro
+            document.getElementById('welcome-screen').classList.remove('hidden'); 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } else if (insertedPin !== null) {
-            alert("PIN incorrecto. Las restricciones del sistema siguen activas.");
+            alert("PIN incorrecto.");
         }
     }
 
-    function clearReports() {
-        const insertedPin = prompt("Ingrese el PIN de Seguridad del Profesor para BORRAR TODO el historial:");
-        
+    async function clearReports() {
+        const insertedPin = prompt("Ingrese el PIN de Seguridad del Profesor para VACIAR LA BASE DE DATOS:");
         if (insertedPin === MASTER_PIN) {
-            if (confirm("¿Está completamente seguro de que desea eliminar permanentemente todos los registros de calificaciones? Esta acción no se puede deshacer.")) {
-                localStorage.removeItem('quiz_reports');
-                updateReportTable();
-                alert("Historial eliminado correctamente.");
+            if (confirm("¿Está seguro de borrar PERMANENTEMENTE todos los registros de la nube? Esto afectará a todos los navegadores.")) {
+                try {
+                    // Borrado masivo usando un filtro genérico (ej. eliminar donde id no sea nulo)
+                    const { error } = await supabase
+                        .from('calificaciones_cms')
+                        .delete()
+                        .neq('student_name', '');
+                    
+                    if (error) throw error;
+                    alert("Base de datos en la nube limpiada con éxito.");
+                    loadCloudReports();
+                } catch (err) {
+                    console.error(err);
+                    alert("Error al vaciar los datos.");
+                }
             }
         } else if (insertedPin !== null) {
-            alert("PIN incorrecto. No se realizaron cambios.");
+            alert("PIN incorrecto.");
         }
     }
 </script>
